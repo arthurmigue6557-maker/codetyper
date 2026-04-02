@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='32' font-size='32'>💻</text></svg>">
+<title>Codetyper PRO 😎</title>
+<style>
+  body {
+    background: black;
+    color: lime;
+    font-family: monospace;
+    margin: 0;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+  #header {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: lime;
+    text-shadow: 0 0 10px green;
+  }
+  #screen {
+    white-space: pre-wrap;
+    line-height: 1.2em;
+    font-size: 16px;
+    min-height: 500px;
+  }
+  #btnClear {
+    margin-top: 10px;
+    padding: 8px 12px;
+    font-size: 16px;
+    background: #222;
+    color: lime;
+    border: 1px solid lime;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div id="header">Codetyper PRO 😎</div>
+<pre id="screen"></pre>
+<button id="btnClear">Limpar Tela</button>
+
+<script>
+const screen = document.getElementById("screen");
+const btnClear = document.getElementById("btnClear");
+
+let texto = "";
+let carregado = false;
+
+// Carrega banco.txt
+fetch("https://cdn.jsdelivr.net/gh/arthurmigue6557-maker/codetyper@main/banco.txt")
+  .then(r => r.text())
+  .then(data => {
+    texto = data;
+    carregado = true;
+    console.log("Banco carregado! Codetyper PRO pronto 😎");
+  });
+
+// Web Audio API para sons
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioContext();
+
+function playClick() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = "square";
+  osc.frequency.value = 500 + Math.random() * 200; // frequencia aleatória
+  gain.gain.value = 0.1;
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.05);
+}
+
+// Pega pedaço aleatório do texto
+function getPedaço() {
+  if(!carregado) return "";
+  const tamanho = Math.floor(Math.random() * 5) + 5; // 10 characteres
+  const start = Math.floor(Math.random() * (texto.length - tamanho));
+  return texto.substring(start, start + tamanho);
+}
+
+// Mostrar letra por letra com cores aleatórias
+function typeEffect(pedaço) {
+  let i = 0;
+  const frame = () => {
+    if(i >= pedaço.length) return;
+    const span = document.createElement("span");
+    span.textContent = pedaço[i];
+    span.style.color = Math.random() > 0.7 ? "yellow" : "lime"; // cores aleatórias
+    if(Math.random() > 0.95) span.style.textShadow = "0 0 5px white"; // piscando
+    screen.appendChild(span);
+    screen.scrollTop = screen.scrollHeight;
+
+    i++;
+    const delay = 5 + Math.random() * 20; // velocidade variável
+    requestAnimationFrame(() => setTimeout(frame, delay));
+    playClick();
+  };
+  frame();
+}
+
+function autoScroll() {
+  // Se o conteúdo passar da altura da tela
+  if (screen.scrollHeight > window.innerHeight) {
+    screen.scrollBy({ top: 1, behavior: "smooth" });
+    requestAnimationFrame(autoScroll);
+  } else {
+    requestAnimationFrame(autoScroll);
+  }
+}
+
+// Começa o auto-scroll
+requestAnimationFrame(autoScroll);
+
+// Evento tecla pressionada (desktop)
+document.addEventListener("keydown", () => {
+  const pedaço = getPedaço();
+  typeEffect(pedaço);
+});
+
+// Evento toque (mobile)
+document.addEventListener("touchstart", () => {
+  const pedaço = getPedaço();
+  typeEffect(pedaço);
+});
+
+// Botão limpar tela
+btnClear.addEventListener("click", () => {
+  screen.textContent = "";
+});
+
+</script>
+</body>
+</html>
