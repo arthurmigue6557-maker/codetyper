@@ -1,168 +1,221 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='32' font-size='32'>💻</text></svg>">
 <title>Codetyper PRO 😎</title>
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='32' font-size='32'>💻</text></svg>">
+
 <style>
-  body {
-    background: black;
-    color: lime;
-    font-family: monospace;
-    margin: 0;
-    padding: 20px;
-    overflow-x: hidden;
-  }
-  #header {
-    font-size: 28px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    color: lime;
-    text-shadow: 0 0 10px green;
-  }
-  #screen {
-    white-space: pre-wrap;
-    line-height: 1.2em;
-    font-size: 16px;
-    min-height: 500px;
-  }
-  #btnClear {
-    margin-top: 10px;
-    padding: 8px 12px;
-    font-size: 16px;
-    background: #222;
-    color: lime;
-    border: 1px solid lime;
-    cursor: pointer;
-  }
+body {
+  background: radial-gradient(circle at top, #020202, #000);
+  color: lime;
+  font-family: monospace;
+  margin: 0;
+  padding: 20px;
+}
+
+#container {
+  max-width: 900px;
+  margin: auto;
+}
+
+#header {
+  font-size: 32px;
+  text-align: center;
+  text-shadow: 0 0 10px lime;
+}
+
+#stats {
+  text-align: center;
+  margin: 10px;
+  color: #aaa;
+}
+
+#progressBar {
+  height: 5px;
+  background: lime;
+  width: 0%;
+  transition: 0.2s;
+}
+
+#screen {
+  background: black;
+  border: 1px solid lime;
+  height: 400px;
+  overflow-y: auto;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 8px;
+  background: black;
+  color: lime;
+  border: 1px solid lime;
+  cursor: pointer;
+}
+
+#event {
+  color: red;
+  text-align: center;
+  height: 20px;
+}
 </style>
+
 </head>
+
 <body>
-<div id="header">Codetyper PRO 😎</div>
-  <div style="max-width:800px; margin:auto; color:#aaa; font-size:14px;">
+<div id="container">
 
-  <p>
-    Codetyper é um simulador de digitação estilo hacker.  
-    Pressione qualquer tecla (ou toque na tela no celular) para gerar código automaticamente.
-  </p>
+<h1 id="header">Codetyper PRO 😎</h1>
 
-  <p>
-    Este site foi criado para entretenimento e demonstração de efeitos visuais com JavaScript.
-  </p>
-
+<div id="stats">
+  Nível: <span id="level">1</span> |
+  XP: <span id="xp">0</span> |
+  Linhas: <span id="lines">0</span>
 </div>
-  <div style="text-align:center; margin:10px; color:yellow;">
-  ▶ Pressione qualquer tecla para começar  
-</div>
+
+<div id="progressBar"></div>
+
+<div id="event"></div>
+
 <pre id="screen"></pre>
-<button id="btnClear">Limpar Tela</button>
 
-  <hr style="margin:40px 0; border-color:#333;">
+<button onclick="toggleAuto()">Modo Auto</button> <button onclick="clearScreen()">Limpar Tela</button>
 
-<h2>Sobre</h2>
-<p>
-O Codetyper é um projeto independente criado para simular digitação de código em tempo real.
-Ele utiliza um banco de dados de texto e efeitos visuais para criar uma experiência estilo terminal hacker.
-</p>
-
-  <div id="ad" style="margin:20px auto; text-align:center;">
-  <!-- anúncio vai aparecer aqui -->
-</div>
-
-  <div style="margin-top:40px; text-align:center;">
-  <a href="politica.html" style="color:lime;">Política de Privacidade</a>
 </div>
 
 <script>
 const screen = document.getElementById("screen");
-const btnClear = document.getElementById("btnClear");
+const levelEl = document.getElementById("level");
+const xpEl = document.getElementById("xp");
+const linesEl = document.getElementById("lines");
+const bar = document.getElementById("progressBar");
+const eventDiv = document.getElementById("event");
 
 let texto = "";
-let carregado = false;
+let xp = 0;
+let level = 1;
+let lines = 0;
+let auto = false;
 
-// Carrega banco.txt
+// carregar banco
 fetch("https://cdn.jsdelivr.net/gh/arthurmigue6557-maker/codetyper@main/banco.txt")
-  .then(r => r.text())
-  .then(data => {
-    texto = data;
-    carregado = true;
-    console.log("Banco carregado! Codetyper PRO pronto 😎");
-  });
+.then(r => r.text())
+.then(data => texto = data);
 
-// Web Audio API para sons
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-const audioCtx = new AudioContext();
-
-function playClick() {
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = "square";
-  osc.frequency.value = 500 + Math.random() * 200; // frequencia aleatória
-  gain.gain.value = 0.1;
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.05);
+// som
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+function beep(){
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.frequency.value = 400 + Math.random()*200;
+  g.gain.value = 0.05;
+  o.connect(g); g.connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime+0.03);
 }
 
-// Pega pedaço aleatório do texto
-function getPedaço() {
-  if(!carregado) return "";
-  const tamanho = Math.floor(Math.random() * 5) + 5; // 10 characteres
-  const start = Math.floor(Math.random() * (texto.length - tamanho));
-  return texto.substring(start, start + tamanho);
+// pegar texto
+function getChunk(){
+  const size = Math.floor(Math.random()*10)+5;
+  const start = Math.floor(Math.random()*(texto.length-size));
+  return texto.substring(start, start+size);
 }
 
-// Mostrar letra por letra com cores aleatórias
-function typeEffect(pedaço) {
-  let i = 0;
-  const frame = () => {
-    if(i >= pedaço.length) return;
+// digitação
+function type(text){
+  let i=0;
+  function loop(){
+    if(i>=text.length) return;
+
     const span = document.createElement("span");
-    span.textContent = pedaço[i];
-    span.style.color = Math.random() > 0.7 ? "yellow" : "lime"; // cores aleatórias
-    if(Math.random() > 0.95) span.style.textShadow = "0 0 5px white"; // piscando
+    span.textContent = text[i];
+    span.style.color = Math.random()>0.8 ? "yellow":"lime";
+
     screen.appendChild(span);
     screen.scrollTop = screen.scrollHeight;
 
     i++;
-    const delay = 5 + Math.random() * 20; // velocidade variável
-    requestAnimationFrame(() => setTimeout(frame, delay));
-    playClick();
-  };
-  frame();
+
+    gainXP();
+    randomEvent();
+    glitch();
+    beep();
+
+    setTimeout(loop, Math.random()*20);
+  }
+  loop();
 }
 
-function autoScroll() {
-  // Se o conteúdo passar da altura da tela
-  if (screen.scrollHeight > window.innerHeight) {
-    screen.scrollBy({ top: 1, behavior: "smooth" });
-    requestAnimationFrame(autoScroll);
-  } else {
-    requestAnimationFrame(autoScroll);
+// progresso
+function gainXP(){
+  xp++;
+  lines++;
+
+  if(xp >= level*100){
+    xp = 0;
+    level++;
+    showEvent("LEVEL UP 🚀");
+  }
+
+  xpEl.textContent = xp;
+  levelEl.textContent = level;
+  linesEl.textContent = lines;
+
+  bar.style.width = (xp/(level*100))*100 + "%";
+}
+
+// eventos
+function showEvent(msg){
+  eventDiv.textContent = msg;
+  setTimeout(()=>eventDiv.textContent="",1000);
+}
+
+function randomEvent(){
+  if(Math.random()>0.98){
+    const eventos=[
+      "ACCESS GRANTED",
+      "FIREWALL BYPASSED",
+      "TRACE DETECTED",
+      "ROOT ACCESS"
+    ];
+    showEvent(eventos[Math.floor(Math.random()*eventos.length)]);
   }
 }
 
-// Começa o auto-scroll
-requestAnimationFrame(autoScroll);
+// glitch
+function glitch(){
+  if(Math.random()>0.995){
+    document.body.style.filter="invert(1)";
+    setTimeout(()=>document.body.style.filter="",100);
+  }
+}
 
-// Evento tecla pressionada (desktop)
-document.addEventListener("keydown", () => {
-  const pedaço = getPedaço();
-  typeEffect(pedaço);
-});
+// auto mode
+function toggleAuto(){
+  auto = !auto;
+  if(auto) autoLoop();
+}
 
-// Evento toque (mobile)
-document.addEventListener("touchstart", () => {
-  const pedaço = getPedaço();
-  typeEffect(pedaço);
-});
+function autoLoop(){
+  if(!auto) return;
+  type(getChunk());
+  setTimeout(autoLoop, 80);
+}
 
-// Botão limpar tela
-btnClear.addEventListener("click", () => {
-  screen.textContent = "";
-});
+// limpar
+function clearScreen(){
+  screen.textContent="";
+}
 
+// input
+document.addEventListener("keydown", ()=>type(getChunk()));
+document.addEventListener("touchstart", ()=>type(getChunk()));
 </script>
+
 </body>
 </html>
+
